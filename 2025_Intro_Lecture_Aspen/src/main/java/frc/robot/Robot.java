@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -79,12 +80,14 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {}
 
-  CANSparkMax motor = new CANSparkMax(1, MotorType.kBrushless);
+  CANSparkMax motor = new CANSparkMax(5, MotorType.kBrushless);
+
+  XboxController controller = new XboxController(0);
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    motor.set(0.5);
+    motor.setVoltage(controller.getLeftY() * 0.25);
 
   }
 
