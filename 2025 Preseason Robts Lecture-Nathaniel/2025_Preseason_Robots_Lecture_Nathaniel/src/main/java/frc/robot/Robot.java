@@ -11,6 +11,7 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -81,10 +82,13 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {}
-CANSparkMax motor = new CANSparkMax(1, MotorType.kBrushless);
+  CANSparkMax motor = new CANSparkMax( 5, MotorType.kBrushless);
+XboxController controller = new XboxController(0);
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    motor.setVoltage(controller.getLeftY() * -3);
+  }
 
   /** This function is called once when the robot is disabled. */
   @Override
