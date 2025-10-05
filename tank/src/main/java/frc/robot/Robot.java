@@ -33,6 +33,8 @@ public class Robot extends TimedRobot {
   private Rotation2d yawPosition = Rotation2d.fromDegrees(0.0);
   private double yawVelocityRadPerSec = 0.0;
 
+  private double deriredHeading = 0.0;
+
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -134,8 +136,25 @@ public class Robot extends TimedRobot {
     leftMotor.set(leftPower);
     rightMotor.set(rightPower);
 
-    // Write code here that uses gyro to keep the robot going straight when turnLR is zero
-
+    // TODO:
+    //  1) Save desiredHeading in teleopInit(), and whenever turnRL becomes zero
+    //  2) In teleopPeriodic()
+    //         If turnRL is zero
+    //             Calculate error between desiredHeading and current heading
+    //             Modify the difference between right and left power to reduce heading error to zero if possible
+    //         Endif
+    //
+    // Think about it:
+    //     Modify R/L power proportionally to the error - the farther from desired, apply more power to correct
+    //     Linear correction power control has a slope you can set
+    //
+    // Experiment with the slope setting:
+    //             * Very low slope will not have enough power to converge on the desired heading
+    //             * Low slope will be slow to converge on the desired heading, but stable once it gets there
+    //             * Medium slope will converge, and hopefully follow the line without oscillating
+    //             * Steep slope will converge, then oscillate side to side as it follows the line
+    //             * Very steep slope will increase the oscillation until the robot spins out - unstable.
+  
   }
 
   /** This function is called once when the robot is disabled. */
