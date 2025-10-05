@@ -158,22 +158,26 @@ public class Robot extends TimedRobot {
       rightPower = -1.0;
     }
 
+    double headingErrorRadians = yawPosition.minus(deriredHeading).getRadians();
+
+    double slopeCorrectionPower = 0.05; // Adjust this.
+
+    double powerCorrection = Math.abs(headingErrorRadians) * slopeCorrectionPower;
+
+    if (headingErrorRadians < 0.0) {
+      // Robot is left of the line, apply more power on left, less on right
+      leftPower += powerCorrection;
+      rightPower -= powerCorrection;
+    } else {
+      leftPower -= powerCorrection;
+      rightPower += powerCorrection;
+    }
+
     leftMotor.set(leftPower);
     rightMotor.set(rightPower);
 
     // TODO:
     // In teleopPeriodic()
-    // If turnRL is zero
-    // Calculate error between desiredHeading and current heading
-    // Modify the difference between right and left power to reduce heading error to
-    // zero if possible
-    // Endif
-    //
-    // Think about it:
-    // Modify R/L power proportionally to the error - the farther from desired,
-    // apply more power to correct
-    // Linear correction power control has a slope you can set
-    //
     // Experiment with the slope setting:
     // * Very low slope will not have enough power to converge on the desired
     // heading
