@@ -35,7 +35,8 @@ public class Robot extends TimedRobot {
   private Rotation2d yawPosition = Rotation2d.fromDegrees(0.0);
   private double yawVelocityRadPerSec = 0.0;
 
-  private double deriredHeading = 0.0;
+  private Rotation2d deriredHeading = Rotation2d.fromDegrees(0.0);
+  private double prevTurnLR = 0.0;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -118,6 +119,9 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
+    if (isConnected) {
+      deriredHeading = yawPosition;
+    }
   }
 
   /** This function is called periodically during operator control. */
@@ -125,6 +129,16 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     // Arcade drive
     double turnLR = myController.getLeftX();
+
+    if (isConnected) {
+      if (prevTurnLR != 0.0) {
+        if (turnLR == 0.0) {
+          deriredHeading = yawPosition;
+        }
+        prevTurnLR = turnLR;
+      }
+    }
+
     double driveFB = myController.getRightY();
 
     double leftPower = driveFB;
@@ -148,8 +162,7 @@ public class Robot extends TimedRobot {
     rightMotor.set(rightPower);
 
     // TODO:
-    // 1) Save desiredHeading in teleopInit(), and whenever turnRL becomes zero
-    // 2) In teleopPeriodic()
+    // In teleopPeriodic()
     // If turnRL is zero
     // Calculate error between desiredHeading and current heading
     // Modify the difference between right and left power to reduce heading error to
