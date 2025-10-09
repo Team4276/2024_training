@@ -30,6 +30,8 @@ public class Robot extends TimedRobot {
   private VictorSP rightMotor;
   private XboxController myController;
 
+  // Ha
+
   private final ADIS16470_IMU gyro = new ADIS16470_IMU();
   private boolean isConnected = false;
   private Rotation2d yawPosition = Rotation2d.fromDegrees(0.0);
