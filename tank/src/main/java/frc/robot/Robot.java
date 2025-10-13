@@ -33,10 +33,10 @@ public class Robot extends TimedRobot {
   private final ADIS16470_IMU gyro = new ADIS16470_IMU();
   private boolean isConnected = false;
   private Rotation2d yawPosition = Rotation2d.fromDegrees(0.0);
-  private double yawVelocityRadPerSec = 0.0;
 
   private Rotation2d deriredHeading = Rotation2d.fromDegrees(0.0);
   private double prevTurnLR = 0.0;
+  private double prevHeadingError = 0.0;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -67,14 +67,11 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     isConnected = gyro.isConnected();
     yawPosition = Rotation2d.fromDegrees(gyro.getAngle());
-    yawVelocityRadPerSec = Units.degreesToRadians(gyro.getRate());
 
     if (isConnected) {
       SmartDashboard.putNumber("Gyro Yaw Radians", yawPosition.getRadians());
-      SmartDashboard.putNumber("Gyro YawVelocity Radians/sec", yawVelocityRadPerSec);
     } else {
       SmartDashboard.putNumber("Gyro Yaw Radians", -1.0);
-      SmartDashboard.putNumber("Gyro YawVelocity Radians/sec", -1.0);
     }
   }
 
@@ -122,6 +119,7 @@ public class Robot extends TimedRobot {
     if (isConnected) {
       deriredHeading = yawPosition;
     }
+    prevHeadingError = 0.0;
   }
 
   /** This function is called periodically during operator control. */
@@ -145,6 +143,49 @@ public class Robot extends TimedRobot {
     double rightPower = leftPower * -1.0;
 
     leftPower += turnLR;
+
+    double headingErrorRadians = yawPosition.minus(deriredHeading).getRadians();
+
+    double proportionalCorrection = 0.05; // Adjust this like a spring constant pulling course to center
+    double powerCorrection = Math.abs(headingErrorRadians) * proportionalCorrection;
+
+    if (headingErrorRadians < 0.0) {
+      // Robot is left of the line, apply more power on left, less on right
+      leftPower += powerCorrection;
+      rightPower -= powerCorrection;
+    } else {
+      leftPower -= powerCorrection;
+      rightPower += powerCorrection;
+    }
+
+    // 50Hz update rate = 20ms period
+    double headingErrorDerivativeRadiansPerSecond = (prevHeadingError - headingErrorRadians) / 0.020;
+    prevHeadingError = headingErrorRadians;
+
+    double dampingCorrection = 0.05; // Adjust this like a shock absorber that resists more the faster you try to
+                                     // move it
+    double powerDamping = headingErrorDerivativeRadiansPerSecond * dampingCorrection;
+
+    // Damping force opposes change in error.
+    // For example, if right of line current error is positive.
+    //// If error is less than last time, (moving CCW), the derivative is positive,
+    //// and the damping force is clockwise.
+    // Or if to the left of the line, current error is negative
+    //// If error is greater than last time, (moving CCW), negative minus a bigger
+    //// negative is positive, so damping force is again clockwise
+    //
+    // No need to worry about what side of the line we are on, positive derivative
+    // means clockwise force
+
+    if (headingErrorDerivativeRadiansPerSecond < 0) {
+      // Error is increasing clockwise, so correction force is CCW
+      leftPower -= powerDamping;
+      rightPower += powerDamping;
+    } else {
+      leftPower += powerDamping;
+      rightPower -= powerDamping;
+    }
+
     if (leftPower > 1.0) {
       leftPower = 1.0;
     } else if (leftPower < -1.0) {
@@ -158,37 +199,40 @@ public class Robot extends TimedRobot {
       rightPower = -1.0;
     }
 
-    double headingErrorRadians = yawPosition.minus(deriredHeading).getRadians();
-
-    double slopeCorrectionPower = 0.05; // Adjust this.
-
-    double powerCorrection = Math.abs(headingErrorRadians) * slopeCorrectionPower;
-
-    if (headingErrorRadians < 0.0) {
-      // Robot is left of the line, apply more power on left, less on right
-      leftPower += powerCorrection;
-      rightPower -= powerCorrection;
-    } else {
-      leftPower -= powerCorrection;
-      rightPower += powerCorrection;
-    }
-
     leftMotor.set(leftPower);
     rightMotor.set(rightPower);
 
     // TODO:
     // In teleopPeriodic()
-    // Experiment with the slope setting:
-    // * Very low slope will not have enough power to converge on the desired
-    // heading
-    // * Low slope will be slow to converge on the desired heading, but stable once
-    // it gets there
-    // * Medium slope will converge, and hopefully follow the line without
-    // oscillating
-    // * Steep slope will converge, then oscillate side to side as it follows the
-    // line
-    // * Very steep slope will increase the oscillation until the robot spins out -
-    // unstable.
+    // Experiment first with the proportional setting:
+    //// * Very low slope will not have enough power to converge on the desired
+    ////// heading
+    //// * Low slope will be slow to converge on the desired heading, but stable
+    ////// once it gets there
+    //// * Medium slope will converge, and hopefully follow the line without
+    ////// oscillating
+    //// * Steep slope will converge, then oscillate side to side as it follows the
+    ////// line
+    //// * Very steep slope will increase the oscillation until the robot spins out
+    ////// unstable.
+    //
+    // Experiment with the damping setting:
+    //// Set proportional control high enough to notice overshoot, then increase
+    //// damping until it looks good again
+    //// It should now settle faster than without damping
+    //
+    //// Try adding too much damping, and note that it converges very slowly
+    //
+    // Objective: Find the optimal combination of proportional and damping for best
+    // performance, converging on the desired heading in minimum time
+    //
+    // Test case:
+    //// Modify code in teleopInit() to set desired heading to 90 degrees right of
+    ///// current heading
+    //// Set robot facing left of hall
+    //// Hold right joystick all the way forward, don't touch the left joystick
+    //// Enable robot (Will turn hard right and go straight down the hall)
+    //// Use shuffleboard to display a graph of current heading
 
   }
 
