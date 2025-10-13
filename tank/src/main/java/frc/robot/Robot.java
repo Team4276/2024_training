@@ -142,9 +142,10 @@ public class Robot extends TimedRobot {
     double driveFB = myController.getRightY();
 
     double leftPower = driveFB;
-    double rightPower = leftPower * -1.0;
+    double rightPower = leftPower;
 
     leftPower += turnLR;
+    rightPower -= turnLR;
 
     double headingErrorRadians = yawPosition.minus(deriredHeading).getRadians();
 
@@ -202,7 +203,7 @@ public class Robot extends TimedRobot {
     }
 
     leftMotor.set(leftPower);
-    rightMotor.set(rightPower);
+    rightMotor.set(rightPower * -1.0);  // Motors face opposite directions, -1 makes both go forward for positive power
 
     // TODO:
     // In teleopPeriodic()
